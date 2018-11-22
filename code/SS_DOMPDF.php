@@ -1,6 +1,9 @@
 <?php
 namespace Burnbright\SS_DOMPDF;
 
+use SilverStripe\Assets\File;
+use SilverStripe\Assets\FileNameFilter;
+use SilverStripe\Assets\Folder;
 use SilverStripe\Control\Director;
 
 /**
@@ -62,19 +65,15 @@ class SS_DOMPDF
     public function toFile($filename = "file", $folder = "PDF")
     {
         $filename = $this->addFileExt($filename);
-        $filedir  = ASSETS_DIR . "/$folder/$filename";
-        $filepath = ASSETS_PATH . DIRECTORY_SEPARATOR . $folder . DIRECTORY_SEPARATOR . $filename;
+        $filepath = File::join_paths([$folder, FileNameFilter::create()->filter($filename)]);
         $folder   = Folder::find_or_make($folder);
         $output   = $this->output();
-        if ($fh       = fopen($filepath, 'w')) {
-            fwrite($fh, $output);
-            fclose($fh);
-        }
-        $file           = new File();
-        $file->setName($filename);
-        $file->Filename = $filedir;
+        $file     = new File();
+        $file->setFromString($output, $filepath);
+        // $file->Filename = $filedir;
         $file->ParentID = $folder->ID;
         $file->write();
+        $file->publishFile();
         return $file;
     }
 
